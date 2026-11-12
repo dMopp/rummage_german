@@ -4286,11 +4286,11 @@ void Browser::mount_remote(const fs::Place& place, bool open) {
         return;
     }
     if (!remotes_.mount) {
-        show_message(std::format("“{}” could not be mounted: gvfs is not available", place.label),
+        show_message(i18n::trf("“{}” could not be mounted: gvfs is not available", place.label),
                      true);
         return;
     }
-    show_message(std::format("Connecting to “{}”…", place.label), false);
+    show_message(i18n::trf("Connecting to “{}”…", place.label), false);
     ++operations_;
     Remotes::Prompts prompts{
         .login =
@@ -4301,7 +4301,7 @@ void Browser::mount_remote(const fs::Place& place, bool open) {
                     answer(std::nullopt);
                     return;
                 }
-                mount_password_.open(std::format("Connect to “{}”", name), request, answer);
+                mount_password_.open(i18n::trf("Connect to “{}”", name), request, answer);
             },
         .question =
             [this, alive = alive_](const std::string& message,
@@ -4336,18 +4336,18 @@ void Browser::mount_remote(const fs::Place& place, bool open) {
                        --operations_;
                        mount_password_.close();
                        if (error == "cancelled") {
-                           show_message(std::format("Not connected to “{}”", name), false);
+                           show_message(i18n::trf("Not connected to “{}”", name), false);
                            return;
                        }
                        if (!error.empty()) {
-                           show_message(std::format("“{}” could not be mounted: {}", name, error),
+                           show_message(i18n::trf("“{}” could not be mounted: {}", name, i18n::tr(error)),
                                         true);
                            return;
                        }
                        if (open) {
                            this->open(where);
                        }
-                       show_message(std::format("“{}” mounted", name), false);
+                       show_message(i18n::trf("“{}” mounted", name), false);
                    });
 }
 
@@ -4360,18 +4360,18 @@ void Browser::open_location() {
 std::string Browser::go_to(std::string_view text, bool add) {
     const std::optional<fs::Location> location = fs::parse_location(text, place_sources_.home);
     if (!location) {
-        return std::string{"Not a folder or a server: start with /, ~, smb:// or sftp://"};
+        return std::string{i18n::tr("Not a folder or a server: start with /, ~, smb:// or sftp://")};
     }
     if (location->uri.empty()) {
         std::error_code ignored;
         if (!std::filesystem::is_directory(location->folder, ignored)) {
-            return std::format("There is no folder “{}”", location->folder.string());
+            return i18n::trf("There is no folder “{}”", location->folder.string());
         }
         open(location->folder);
         return {};
     }
     if (!remotes_.mount) {
-        return std::string{"Servers are mounted through gvfs, which is not available"};
+        return std::string{i18n::tr("Servers are mounted through gvfs, which is not available")};
     }
     const std::optional<fs::RemoteUri> remote = fs::parse_remote_uri(location->uri);
     std::string label = remote ? fs::remote_label(*remote) : location->uri;
@@ -4403,11 +4403,11 @@ void Browser::unmount_remote(const fs::Place& place) {
         }
         --operations_;
         if (error == "in use") {
-            show_message(std::format("“{}” is in use: close the files open from it", name), true);
+            show_message(i18n::trf("“{}” is in use: close the files open from it", name), true);
         } else if (!error.empty()) {
-            show_message(std::format("“{}” could not be unmounted: {}", name, error), true);
+            show_message(i18n::trf("“{}” could not be unmounted: {}", name, i18n::tr(error)), true);
         } else {
-            show_message(std::format("“{}” unmounted", name), false);
+            show_message(i18n::trf("“{}” unmounted", name), false);
         }
     });
 }
