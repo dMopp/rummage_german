@@ -3,6 +3,7 @@
 #include <array>
 #include <charconv>
 #include <chrono>
+#include <clocale>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
@@ -66,6 +67,7 @@
 #include "rummage/views/file_picker.hpp"
 #include "rummage/views/state.hpp"
 #include "rummage/views/title_bar.hpp"
+#include "rummage/core/i18n.hpp"
 #include "test_scene.hpp"
 
 namespace {
@@ -74,6 +76,7 @@ namespace core = rummage::core;
 namespace engines = rummage::engines;
 namespace isolate = rummage::isolate;
 namespace fs = rummage::fs;
+namespace i18n = rummage::i18n;
 namespace log = rummage::log;
 namespace platform = rummage::platform;
 namespace theme = rummage::theme;
@@ -376,6 +379,9 @@ platform::Gvfs::Prompts remote_prompts(views::Remotes::Prompts prompts) {
 
 int main(int argc, char** argv) {
     core::give_back_large_blocks();  // before any thread: decoded photos go back to the system
+    // System error texts (strerror, std::error_code) in the user's language, as the interface;
+    // only messages: numbers and sorting stay as they are.
+    std::setlocale(LC_MESSAGES, "");
     const StartupTrace startup;
     startup.mark("main");
     std::filesystem::path config_path;
@@ -676,7 +682,7 @@ int main(int argc, char** argv) {
             display,
             egl,
             fonts,
-            {.title = picker_request ? (picker_request->title.empty() ? "Select a file — rummage"
+            {.title = picker_request ? (picker_request->title.empty() ? std::string{i18n::tr("Select a file — rummage")}
                                                                       : picker_request->title)
                                      : "rummage",
              .app_id = "rummage",

@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <utility>
 
+#include "rummage/core/i18n.hpp"
 #include "rummage/fs/operations.hpp"
 
 namespace rummage::fs {
@@ -128,8 +129,8 @@ std::string human_size(std::uint64_t bytes) {
         value /= 1000.0;
         ++unit;
     }
-    return unit == 0 ? std::format("{} bytes", bytes)
-                     : std::format("{:.1f} {}", value, units.at(unit));
+    return unit == 0 ? i18n::trf("{} bytes", bytes)
+                     : i18n::decimal(std::format("{:.1f} {}", value, units.at(unit)));
 }
 
 // One top-level item and the sidecars that travel with it.
@@ -1003,8 +1004,10 @@ bool Engine::place(const std::filesystem::path& source, const std::filesystem::p
     const std::optional<struct stat> existing = replace ? status_of(target) : std::nullopt;
     const bool folder = S_ISDIR(info->st_mode);
     if (existing && folder != S_ISDIR(existing->st_mode)) {
-        error(where, folder ? "a file has its name; a folder does not replace a file"
-                            : "a folder has its name; a file does not replace a folder");
+        error(where,
+              std::string{
+                  folder ? i18n::tr("a file has its name; a folder does not replace a file")
+                         : i18n::tr("a folder has its name; a file does not replace a folder")});
         return false;
     }
     if (existing && folder) {
@@ -1034,7 +1037,7 @@ bool Engine::place(const std::filesystem::path& source, const std::filesystem::p
     if (S_ISLNK(info->st_mode)) {
         return copy_link(source, *info, target, where, replace, fresh);
     }
-    error(where, "a special file (device, socket, pipe): not copied");
+    error(where, std::string{i18n::tr("a special file (device, socket, pipe): not copied")});
     return false;
 }
 
@@ -1058,7 +1061,7 @@ TransferResult Engine::run() {
         to = status_of(r.destination);
     }
     if (!to || !S_ISDIR(to->st_mode)) {
-        result_.refused = std::format("{} is not a folder", r.destination.string());
+        result_.refused = i18n::trf("{} is not a folder", r.destination.string());
         return finished();
     }
     std::error_code ignored;
@@ -1081,8 +1084,8 @@ TransferResult Engine::run() {
         const std::filesystem::path folder = source_dir / group.name;
         const auto [end, rest] = std::ranges::mismatch(folder, target_dir);
         if (end == folder.end()) {
-            result_.refused =
-                std::format("Cannot {} {} into itself", moving_ ? "move" : "copy", group.name);
+            result_.refused = moving_ ? i18n::trf("Cannot move {} into itself", group.name)
+                                      : i18n::trf("Cannot copy {} into itself", group.name);
             return finished();
         }
     }
@@ -1109,8 +1112,8 @@ TransferResult Engine::run() {
             const std::uint64_t free = static_cast<std::uint64_t>(space.f_bavail) *
                                        static_cast<std::uint64_t>(space.f_frsize);
             if (progress_.bytes_total > free) {
-                result_.refused = std::format("Not enough space: {} needed, {} free",
-                                              human_size(progress_.bytes_total), human_size(free));
+                result_.refused = i18n::trf("Not enough space: {} needed, {} free",
+                                            human_size(progress_.bytes_total), human_size(free));
                 return finished();
             }
         }
