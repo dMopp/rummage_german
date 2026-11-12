@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <utility>
 
+#include "rummage/core/i18n.hpp"
 #include "rummage/fs/operations.hpp"
 
 namespace rummage::platform {
@@ -107,7 +108,8 @@ void ActionHandoff::run(const core::Action& action, const core::ActionContext& c
     }
     if (action.destination != core::Action::Destination::none) {
         if (action.argv.empty() || !available(action.argv.front())) {
-            report_("The action program is not installed or executable", true);
+            report_(std::string{i18n::tr("The action program is not installed or executable")},
+                    true);
             return;
         }
         core::PickerRequest request;
@@ -123,7 +125,7 @@ void ActionHandoff::run(const core::Action& action, const core::ActionContext& c
                 return;
             }
             if (!valid_destination(*path, directory)) {
-                report_("The selected destination is no longer valid", true);
+                report_(std::string{i18n::tr("The selected destination is no longer valid")}, true);
                 return;
             }
             launch(action, context, *path);
@@ -186,10 +188,10 @@ void ActionHandoff::launch(const core::Action& action, const core::ActionContext
                 const bool failed = result.status != 0 || result.signal != 0;
                 const auto message =
                     result.signal != 0
-                        ? std::format("Program stopped by signal {}", result.signal)
+                        ? i18n::trf("Program stopped by signal {}", result.signal)
                         : (result.status != 0
-                               ? std::format("Program exited with status {}", result.status)
-                               : std::string{"Completed successfully"});
+                               ? i18n::trf("Program exited with status {}", result.status)
+                               : std::string{i18n::tr("Completed successfully")});
                 if (failed && archive) {
                     const ArchiveBackend backend{.kind = ArchiveBackend::Kind::file_roller,
                                                  .program = program};
@@ -201,8 +203,8 @@ void ActionHandoff::launch(const core::Action& action, const core::ActionContext
                     report_(std::format("{}: {}", label, message), failed);
                 }
                 if (notify) {
-                    const auto title =
-                        std::format("{}: {}", failed ? "Failed" : "Completed", label);
+                    const auto title = std::format(
+                        "{}: {}", failed ? i18n::tr("Failed") : i18n::tr("Completed"), label);
                     if (notify_) {
                         notify_(title, message, failed);
                     } else {
@@ -221,7 +223,7 @@ void ActionHandoff::launch(const core::Action& action, const core::ActionContext
             report_(error ? std::format("Could not start {}: {}. Check that the program is "
                                         "installed and executable, then retry.",
                                         label, error.message())
-                          : std::format("Handed off: {}", label),
+                          : i18n::trf("Handed off: {}", label),
                     static_cast<bool>(error));
         }
     };
@@ -388,7 +390,7 @@ void ActionHandoff::choose_destination(const std::filesystem::path& initial,
     core::PickerRequest request;
     request.directory = true;
     request.folder = initial.string();
-    request.title = "Extract To…";
+    request.title = std::string{i18n::tr("Extract To…")};
     choose_path(request, std::move(chosen));
 }
 
@@ -641,7 +643,7 @@ void ActionHandoff::next_password() {
                     std::fill(password->begin(), password->end(), '\0');
                 }
             } else {
-                report_("Extraction cancelled: " + job->source.filename().string(), false);
+                report_(i18n::trf("Extraction cancelled: {}", job->source.filename().string()), false);
             }
             next_password();
         });
@@ -747,7 +749,7 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
             if (job->backend.tar_layer)
                 std::filesystem::remove(job->staging / "payload", ignored);
             std::filesystem::remove(job->staging, ignored);
-            report_("Extracted to " + output.string(), false);
+            report_(i18n::trf("Extracted to {}", output.string()), false);
         },
         job->output->fd, job->errors->fd, job->password ? job->password->fd : -1, job->input->fd);
     if (error) {

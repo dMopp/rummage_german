@@ -1792,7 +1792,7 @@ std::vector<MenuItem> Browser::entry_menu(const std::shared_ptr<Folder>& folder)
         items.push_back(std::move(gone));
         MenuItem properties;
         properties.id = "properties";
-        properties.label = "Properties…";
+        properties.label = i18n::tr("Properties…");
         properties.keys = keys_for(Command::properties);
         properties.separator = true;
         properties.enabled = names.size() == 1;
@@ -2014,7 +2014,7 @@ std::vector<MenuItem> Browser::folder_menu() {
     items.push_back(sort_menu());
     MenuItem properties;
     properties.id = "properties";
-    properties.label = "Properties…";
+    properties.label = i18n::tr("Properties…");
     properties.keys = keys_for(Command::properties);
     properties.separator = true;
     properties.action = [this] { show_properties(); };
@@ -2754,9 +2754,9 @@ void Browser::draw_toolbar(ui::Renderer& renderer, const ui::Rect& bounds,
     const auto width_of = [&](std::string_view text) {
         return renderer.fonts().layout(text, 13, renderer.scale()).width / renderer.scale();
     };
-    const float label_width = bounds.width >= 300 ? width_of("Filter") : -10;
-    const float button_width = std::max(104.0F, width_of("New Folder") + 20.0F);
-    const float clear_width = std::max(64.0F, width_of("Clear") + 20.0F);
+    const float label_width = bounds.width >= 300 ? width_of(i18n::tr("Filter")) : -10;
+    const float button_width = std::max(104.0F, width_of(i18n::tr("New Folder")) + 20.0F);
+    const float clear_width = std::max(64.0F, width_of(i18n::tr("Clear")) + 20.0F);
     const float field_x = bounds.x + 10 + label_width + 10;
     float field_right = bounds.right() - 10;
     if (panes_enabled_) {
@@ -2782,7 +2782,7 @@ void Browser::draw_toolbar(ui::Renderer& renderer, const ui::Rect& bounds,
         renderer.draw_layout(line, rect.x, rect.y + (rect.height - height) / 2, color);
     };
     if (label_width > 0)
-        text_in("Filter", {bounds.x + 10, area().filter_bounds.y, label_width, 32},
+        text_in(i18n::tr("Filter"), {bounds.x + 10, area().filter_bounds.y, label_width, 32},
                 palette.on_surface);
     pane().filter_field.draw(
         renderer, area().filter_bounds, 14,
@@ -2795,14 +2795,14 @@ void Browser::draw_toolbar(ui::Renderer& renderer, const ui::Rect& bounds,
                       ? palette.primary
                       : palette.primary.with_alpha(0)});
     if (name_filter().empty() && !filter_focused_) {
-        text_in("Filter names…",
+        text_in(i18n::tr("Filter names…"),
                 {area().filter_bounds.x + 6, area().filter_bounds.y,
                  area().filter_bounds.width - 12, area().filter_bounds.height},
                 palette.on_surface_variant);
     }
     const auto button = [&](const ui::Rect& rect, const char* label) {
         renderer.draw_box(rect, {.fill = palette.surface_container_highest, .radius = {}});
-        text_in(label, {rect.x + 10, rect.y, rect.width - 20, rect.height}, palette.on_surface);
+        text_in(i18n::tr(label), {rect.x + 10, rect.y, rect.width - 20, rect.height}, palette.on_surface);
     };
     if (!area().view_menu_bounds.empty()) {
         button(area().view_menu_bounds, "View");
