@@ -668,7 +668,7 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
                             "Check destination permissions and free disk space, then retry.");
             return;
         }
-        report_("Extracting " + job->source.filename().string() + "…", false);
+        report_(i18n::trf("Extracting {}…", job->source.filename().string()), false);
     }
     const bool stream = !second_pass && (job->backend.tar_layer || job->backend.single_file);
     auto backend = job->backend;
