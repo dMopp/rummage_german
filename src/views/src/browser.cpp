@@ -2802,7 +2802,8 @@ void Browser::draw_toolbar(ui::Renderer& renderer, const ui::Rect& bounds,
     }
     const auto button = [&](const ui::Rect& rect, const char* label) {
         renderer.draw_box(rect, {.fill = palette.surface_container_highest, .radius = {}});
-        text_in(i18n::tr(label), {rect.x + 10, rect.y, rect.width - 20, rect.height}, palette.on_surface);
+        text_in(i18n::tr(label), {rect.x + 10, rect.y, rect.width - 20, rect.height},
+                palette.on_surface);
     };
     if (!area().view_menu_bounds.empty()) {
         button(area().view_menu_bounds, "View");
@@ -4340,8 +4341,9 @@ void Browser::mount_remote(const fs::Place& place, bool open) {
                            return;
                        }
                        if (!error.empty()) {
-                           show_message(i18n::trf("“{}” could not be mounted: {}", name, i18n::tr(error)),
-                                        true);
+                           show_message(
+                               i18n::trf("“{}” could not be mounted: {}", name, i18n::tr(error)),
+                               true);
                            return;
                        }
                        if (open) {
@@ -4360,7 +4362,8 @@ void Browser::open_location() {
 std::string Browser::go_to(std::string_view text, bool add) {
     const std::optional<fs::Location> location = fs::parse_location(text, place_sources_.home);
     if (!location) {
-        return std::string{i18n::tr("Not a folder or a server: start with /, ~, smb:// or sftp://")};
+        return std::string{
+            i18n::tr("Not a folder or a server: start with /, ~, smb:// or sftp://")};
     }
     if (location->uri.empty()) {
         std::error_code ignored;
@@ -4891,7 +4894,8 @@ void Browser::run(Command command, Clock::time_point now) {
             if (transfers_.pending() > 0) {
                 cancel_transfer();
             } else {
-                show_message("Nothing is being copied, moved or deleted", false);
+                show_message(std::string{i18n::tr("Nothing is being copied, moved or deleted")},
+                             false);
             }
             break;
         case Command::context_menu:

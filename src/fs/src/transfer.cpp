@@ -1049,7 +1049,7 @@ TransferResult Engine::run() {
              return name.empty() || name == "." || name == ".." ||
                     std::filesystem::path{name}.filename() != std::filesystem::path{name};
          }))) {
-        result_.refused = "Invalid destination names";
+        result_.refused = i18n::tr("Invalid destination names");
         return finished();
     }
     moving_ = r.kind == TransferKind::move;

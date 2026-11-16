@@ -535,8 +535,8 @@ std::string InfoPane::size_text() const {
         return "—";  // not walked on a network file system
     }
     if (!size_done_) {
-        return size_->bytes == 0 ? std::string{"Counting…"}
-                                 : std::format("Counting… {}", format_size(size_->bytes));
+        return size_->bytes == 0 ? std::string{i18n::tr("Counting…")}
+                                 : i18n::trf("Counting… {}", format_size(size_->bytes));
     }
     return size_->complete() ? format_size(size_->bytes)
                              : std::format("at least {}", format_size(size_->bytes));
