@@ -22,7 +22,7 @@
 
 int main(int argc, char** argv) {
     // The tests read the English interface, whatever language the machine speaks.
-    rummage::i18n::set_language(rummage::i18n::Language::english);
+    rummage::i18n::set_language(rummage::i18n::kEnglish);
     // No test reads or makes the user's trash: the trash folder lists one of its own, and no
     // disk's.
     std::string root = (std::filesystem::temp_directory_path() / "rummage-tests-XXXXXX").string();

@@ -36,7 +36,7 @@ struct Notice {
 
 int main() {
     // The checks below compare English texts, whatever the locale of the machine running them.
-    rummage::i18n::set_language(rummage::i18n::Language::english);
+    rummage::i18n::set_language(rummage::i18n::kEnglish);
     try {
         rummage::core::EventLoop loop;
         rummage::platform::Notifications notifications{loop};

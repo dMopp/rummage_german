@@ -1,37 +1,46 @@
 #pragma once
 
 #include <format>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 // Translations of the interface. The English text is the key: code keeps its English strings,
-// wrapped in tr() or trf(), and a language's table maps them to its own words. No gettext and no
-// files to install: the tables are compiled in. The language comes from the environment once
-// (LANGUAGE, LC_ALL, LC_MESSAGES, LANG, the way glibc picks message catalogs); a text a table
-// does not have stays English.
+// wrapped in tr() or trf(), and a language's catalog maps them to its own words. No gettext and
+// no files to install: every data/i18n/<code>.toml is compiled in, so a new language needs only
+// its file (docs/translations.md). The language comes from the environment once (LANGUAGE,
+// LC_ALL, LC_MESSAGES, LANG, the way glibc picks message catalogs); a text a catalog does not
+// have stays English.
 namespace rummage::i18n {
 
-enum class Language { english, german };
+// English needs no catalog; its code is "en".
+inline constexpr std::string_view kEnglish = "en";
 
 struct Entry {
     std::string_view english;
     std::string_view translated;
 };
 
-// The language the interface speaks: the first language of the environment that has a table.
-[[nodiscard]] Language language();
+// The code of the language the interface speaks ("de", "pt_BR", or "en").
+[[nodiscard]] std::string_view language();
 
-// Overrides the environment's choice (tests, a future setting).
-void set_language(Language language);
+// Overrides the environment's choice (tests, a setting). A code without a catalog is English.
+void set_language(std::string_view code);
 
-// The language of a POSIX locale or LANGUAGE list ("de_DE.UTF-8", "de:en"); english when none of
-// them has a table. "C" and "POSIX" are english.
-[[nodiscard]] Language language_of(std::string_view locales);
+// The language of a POSIX locale or LANGUAGE list ("de_DE.UTF-8", "de:en"): the first entry
+// with a catalog, region first ("pt_BR", then "pt"). "en" when none has one; "C" and "POSIX"
+// are English.
+[[nodiscard]] std::string language_of(std::string_view locales);
 
-// A language's table (empty for english).
-[[nodiscard]] std::span<const Entry> table(Language language);
+// The codes with a catalog, sorted, and "en".
+[[nodiscard]] std::vector<std::string_view> languages();
+
+// A language's own name ("Deutsch"); the code when its catalog has none.
+[[nodiscard]] std::string_view language_name(std::string_view code);
+
+// A language's translated texts (none for English or an unknown code), for tests and tools.
+[[nodiscard]] std::vector<Entry> entries(std::string_view code);
 
 // english in the interface's language.
 [[nodiscard]] std::string_view tr(std::string_view english);
@@ -45,7 +54,7 @@ template <class... Args>
         try {
             return std::vformat(text, std::make_format_args(args...));
         } catch (const std::format_error&) {
-            // The table's fault: English is still right.
+            // The catalog's fault: English is still right.
         }
     }
     return std::vformat(english, std::make_format_args(args...));
