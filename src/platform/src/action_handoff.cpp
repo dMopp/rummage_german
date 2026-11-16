@@ -150,21 +150,23 @@ void ActionHandoff::launch(const core::Action& action, const core::ActionContext
     if (!program) {
         if (archive) {
             for (const auto& target : context.targets)
-                report_("Cannot start the archive manager: " + args.front() +
-                            " is not installed or executable.\n" + archive_install_hint(target) +
-                            "\nArchive: " + target.path.string(),
+                report_(i18n::trf("Cannot start the archive manager: {} is not installed or "
+                                  "executable.",
+                                  args.front()) +
+                            "\n" + archive_install_hint(target) + "\n" +
+                            i18n::trf("Archive: {}", target.path.string()),
                         true);
         } else {
-            report_(std::format("{} is not installed or not executable", args.front()), true);
+            report_(i18n::trf("{} is not installed or not executable", args.front()), true);
         }
         return;
     }
     args.front() = std::filesystem::absolute(*program).string();
     auto errors = archive ? channel() : SharedFd{};
     if (errors && errors->fd < 3) {
-        report_("Cannot prepare archive diagnostics: " +
-                    std::error_code{errno, std::generic_category()}.message() +
-                    ". Close unused applications and try again.",
+        report_(i18n::trf("Cannot prepare archive diagnostics: {}. Close unused applications and "
+                          "try again.",
+                          std::error_code{errno, std::generic_category()}.message()),
                 true);
         return;
     }
@@ -215,14 +217,15 @@ void ActionHandoff::launch(const core::Action& action, const core::ActionContext
             -1, errors ? errors->fd : -1);
         if (error && archive) {
             for (const auto& target : context.targets)
-                report_("Cannot start " + args.front() + ": " + error.message() + "\n" +
-                            archive_install_hint(target) + "\nArchive: " + target.path.string() +
-                            "\nNo extraction was started.",
+                report_(i18n::trf("Cannot start {}: {}", args.front(), error.message()) + "\n" +
+                            archive_install_hint(target) + "\n" +
+                            i18n::trf("Archive: {}", target.path.string()) + "\n" +
+                            std::string{i18n::tr("No extraction was started.")},
                         true);
         } else {
-            report_(error ? std::format("Could not start {}: {}. Check that the program is "
-                                        "installed and executable, then retry.",
-                                        label, error.message())
+            report_(error ? i18n::trf("Could not start {}: {}. Check that the program is "
+                                      "installed and executable, then retry.",
+                                      label, error.message())
                           : i18n::trf("Handed off: {}", label),
                     static_cast<bool>(error));
         }
@@ -319,10 +322,11 @@ void ActionHandoff::run_archive(const core::Action& action, const core::ActionCo
     bool missing = false;
     for (const auto& target : context.targets) {
         if (!archive_backend(target, environment_)) {
-            report_("Cannot extract “" + target.path.filename().string() +
-                        "”: no suitable extractor is installed.\n" + archive_install_hint(target) +
-                        "\n\nArchive: " + target.path.string() +
-                        "\nNo extraction in this selection was started.",
+            report_(i18n::trf("Cannot extract “{}”: no suitable extractor is installed.",
+                              target.path.filename().string()) +
+                        "\n" + archive_install_hint(target) + "\n\n" +
+                        i18n::trf("Archive: {}", target.path.string()) + "\n" +
+                        std::string{i18n::tr("No extraction in this selection was started.")},
                     true);
             missing = true;
         }
@@ -336,9 +340,11 @@ void ActionHandoff::run_archive(const core::Action& action, const core::ActionCo
     for (const auto& target : context.targets) {
         const auto backend = archive_backend(target, environment_);
         if (!backend) {
-            report_("The archive extractor changed or is no longer available. " +
-                        archive_install_hint(target) + "\nArchive: " + target.path.string(),
-                    true);
+            report_(
+                std::string{i18n::tr("The archive extractor changed or is no longer available.")} +
+                    " " + archive_install_hint(target) + "\n" +
+                    i18n::trf("Archive: {}", target.path.string()),
+                true);
             return;
         }
         (backend->kind == ArchiveBackend::Kind::file_roller ? gui : cli).targets.push_back(target);
@@ -364,8 +370,10 @@ void ActionHandoff::run_archive(const core::Action& action, const core::ActionCo
         for (const auto& target : context.targets) {
             const auto backend = archive_backend(target, environment_);
             if (!backend || backend->kind == ArchiveBackend::Kind::file_roller) {
-                report_("The archive extractor changed or is no longer available. " +
-                            archive_install_hint(target) + "\nArchive: " + target.path.string(),
+                report_(std::string{i18n::tr(
+                            "The archive extractor changed or is no longer available.")} +
+                            " " + archive_install_hint(target) + "\n" +
+                            i18n::trf("Archive: {}", target.path.string()),
                         true);
                 return;
             }
@@ -402,8 +410,9 @@ void ActionHandoff::choose_path(const core::PickerRequest& request, DirectoryCho
     if (output->fd < 3 || errors->fd < 3 || lookup_error) {
         const auto error =
             lookup_error ? lookup_error : std::error_code{errno, std::generic_category()};
-        report_("Cannot open the destination picker: " + error.message() +
-                    ". Reopen rummage and try again.\nInitial folder: " + request.folder,
+        report_(i18n::trf("Cannot open the destination picker: {}. Reopen rummage and try again.",
+                          error.message()) +
+                    "\n" + i18n::trf("Initial folder: {}", request.folder),
                 true);
         chosen(std::nullopt);
         return;
@@ -442,19 +451,22 @@ void ActionHandoff::choose_path(const core::PickerRequest& request, DirectoryCho
                         return;
                     }
                 }
-                report_(std::format("The destination picker could not select a valid path. Choose "
-                                    "an existing, accessible folder and try again.\nInitial "
-                                    "folder: {}\nExit status: {}; signal: {}\n{}",
-                                    request.folder, result.status, result.signal,
-                                    diagnostic(errors->fd)),
+                report_(std::string{i18n::tr("The destination picker could not select a valid "
+                                             "path. Choose an existing, accessible folder and "
+                                             "try again.")} +
+                            "\n" + i18n::trf("Initial folder: {}", request.folder) + "\n" +
+                            i18n::trf("Exit status: {}; signal: {}", result.status, result.signal) +
+                            "\n" + diagnostic(errors->fd),
                         true);
                 chosen(std::nullopt);
             },
             output->fd, errors->fd);
         if (error) {
-            report_("Could not open destination picker: " + error.message() +
-                        ". Reopen rummage and try again.\nInitial folder: " + request.folder,
-                    true);
+            report_(
+                i18n::trf("Could not open destination picker: {}. Reopen rummage and try again.",
+                          error.message()) +
+                    "\n" + i18n::trf("Initial folder: {}", request.folder),
+                true);
             chosen(std::nullopt);
         }
     };
@@ -475,18 +487,18 @@ void ActionHandoff::extract(const core::ActionTarget& target, const ArchiveBacke
     job->input =
         std::make_shared<Descriptor>(open(target.path.c_str(), O_RDONLY | O_CLOEXEC | O_NONBLOCK));
     if (job->input->fd < 3) {
-        archive_problem(
-            job,
-            "Cannot read archive: " + std::error_code{errno, std::generic_category()}.message(),
-            "Check that the source still exists and is readable, then try again.");
+        archive_problem(job,
+                        i18n::trf("Cannot read archive: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
+                        "Check that the source still exists and is readable, then try again.");
         return;
     }
     struct stat info{};
     if (fstat(job->input->fd, &info) != 0) {
-        archive_problem(
-            job,
-            "Cannot inspect source: " + std::error_code{errno, std::generic_category()}.message(),
-            "Check the source file and try again.");
+        archive_problem(job,
+                        i18n::trf("Cannot inspect source: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
+                        "Check the source file and try again.");
         return;
     }
     if (!S_ISREG(info.st_mode)) {
@@ -497,8 +509,8 @@ void ActionHandoff::extract(const core::ActionTarget& target, const ArchiveBacke
     job->errors = channel();
     if (job->errors->fd < 3) {
         archive_problem(job,
-                        "Cannot prepare diagnostics: " +
-                            std::error_code{errno, std::generic_category()}.message(),
+                        i18n::trf("Cannot prepare diagnostics: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
                         "Close unused applications and try again.");
         return;
     }
@@ -511,11 +523,13 @@ void ActionHandoff::extract(const core::ActionTarget& target, const ArchiveBacke
 
 void ActionHandoff::archive_problem(const std::shared_ptr<Extraction>& job, std::string reason,
                                     std::string guidance) {
-    report_("Could not extract “" + job->source.filename().string() + "”.\n" + reason + "\n" +
-                guidance + "\n\nArchive: " + job->source.string() +
-                "\nDestination: " + job->destination.string() +
-                (job->staging.empty() ? "\nNo extraction output was created."
-                                      : "\nOutput retained at: " + job->staging.string()),
+    // A fixed reason and the advice are translated here; a reason with details came translated.
+    report_(i18n::trf("Could not extract “{}”.", job->source.filename().string()) + "\n" +
+                std::string{i18n::tr(reason)} + "\n" + std::string{i18n::tr(guidance)} + "\n\n" +
+                i18n::trf("Archive: {}", job->source.string()) + "\n" +
+                i18n::trf("Destination: {}", job->destination.string()) + "\n" +
+                (job->staging.empty() ? std::string{i18n::tr("No extraction output was created.")}
+                                      : i18n::trf("Output retained at: {}", job->staging.string())),
             true);
 }
 
@@ -536,10 +550,10 @@ void ActionHandoff::fail_archive(const std::shared_ptr<Extraction>& job, std::st
 void ActionHandoff::probe_archive(std::shared_ptr<Extraction> job, bool verify) {
     auto output = channel();
     if (output->fd < 3) {
-        archive_problem(
-            job,
-            "Cannot inspect archive: " + std::error_code{errno, std::generic_category()}.message(),
-            "Close unused applications and try again.");
+        archive_problem(job,
+                        i18n::trf("Cannot inspect archive: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
+                        "Close unused applications and try again.");
         return;
     }
     auto backend = job->backend;
@@ -558,15 +572,15 @@ void ActionHandoff::probe_archive(std::shared_ptr<Extraction> job, bool verify) 
     }
     if (ftruncate(job->errors->fd, 0) != 0 || lseek(job->errors->fd, 0, SEEK_SET) < 0) {
         archive_problem(job,
-                        "Cannot prepare diagnostics: " +
-                            std::error_code{errno, std::generic_category()}.message(),
+                        i18n::trf("Cannot prepare diagnostics: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
                         "Close unused applications and try again.");
         return;
     }
     if (job->password && lseek(job->password->fd, 0, SEEK_SET) < 0) {
         archive_problem(job,
-                        "Cannot read the submitted password: " +
-                            std::error_code{errno, std::generic_category()}.message(),
+                        i18n::trf("Cannot read the submitted password: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
                         "Start extraction again and re-enter the password.");
         return;
     }
@@ -593,9 +607,9 @@ void ActionHandoff::probe_archive(std::shared_ptr<Extraction> job, bool verify) 
         },
         output->fd, job->errors->fd, job->password ? job->password->fd : -1, job->input->fd);
     if (error)
-        archive_problem(job,
-                        "Cannot start " + job->backend.program.string() + ": " + error.message(),
-                        archive_install_hint({job->source, job->mime}));
+        archive_problem(
+            job, i18n::trf("Cannot start {}: {}", job->backend.program.string(), error.message()),
+            archive_install_hint({job->source, job->mime}));
 }
 
 void ActionHandoff::ask_password(std::shared_ptr<Extraction> job) {
@@ -633,8 +647,8 @@ void ActionHandoff::next_password() {
                                              static_cast<ssize_t>(password->size())) {
                         archive_problem(
                             job,
-                            "Cannot prepare the password: " +
-                                std::error_code{errno, std::generic_category()}.message(),
+                            i18n::trf("Cannot prepare the password: {}",
+                                      std::error_code{errno, std::generic_category()}.message()),
                             "Close unused applications and start extraction again.");
                     } else {
                         job->password = std::move(input);
@@ -643,7 +657,8 @@ void ActionHandoff::next_password() {
                     std::fill(password->begin(), password->end(), '\0');
                 }
             } else {
-                report_(i18n::trf("Extraction cancelled: {}", job->source.filename().string()), false);
+                report_(i18n::trf("Extraction cancelled: {}", job->source.filename().string()),
+                        false);
             }
             next_password();
         });
@@ -653,8 +668,9 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
     if (job->staging.empty()) {
         const auto made = fs::make_folder(job->destination, job->name + " (extracting)");
         if (made.error) {
-            archive_problem(job, "Cannot create the extraction folder: " + made.error.message(),
-                            "Choose a writable destination with enough free space.");
+            archive_problem(
+                job, i18n::trf("Cannot create the extraction folder: {}", made.error.message()),
+                "Choose a writable destination with enough free space.");
             return;
         }
         job->staging = job->destination / made.name;
@@ -664,7 +680,8 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
         if (!error)
             std::filesystem::create_directory(job->contents, error);
         if (error) {
-            archive_problem(job, "Cannot prepare the extraction folder: " + error.message(),
+            archive_problem(job,
+                            i18n::trf("Cannot prepare the extraction folder: {}", error.message()),
                             "Check destination permissions and free disk space, then retry.");
             return;
         }
@@ -679,8 +696,8 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
             open((job->staging / "payload").c_str(), O_RDONLY | O_CLOEXEC));
         if (job->input->fd < 3) {
             archive_problem(job,
-                            "Cannot read the unpacked tar data: " +
-                                std::error_code{errno, std::generic_category()}.message(),
+                            i18n::trf("Cannot read the unpacked tar data: {}",
+                                      std::error_code{errno, std::generic_category()}.message()),
                             "Check the retained output folder and retry extraction.");
             return;
         }
@@ -692,8 +709,8 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
     }
     if (job->input->fd < 3 || job->output->fd < 3) {
         archive_problem(job,
-                        "Cannot prepare archive input or output: " +
-                            std::error_code{errno, std::generic_category()}.message(),
+                        i18n::trf("Cannot prepare archive input or output: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
                         "Check destination permissions and free disk space, then retry.");
         return;
     }
@@ -703,15 +720,15 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
         archive_command(backend, "/proc/self/fd/3", stream, static_cast<bool>(job->password));
     if (job->password && lseek(job->password->fd, 0, SEEK_SET) < 0) {
         archive_problem(job,
-                        "Cannot read the submitted password: " +
-                            std::error_code{errno, std::generic_category()}.message(),
+                        i18n::trf("Cannot read the submitted password: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
                         "Start extraction again and re-enter the password.");
         return;
     }
     if (ftruncate(job->errors->fd, 0) != 0 || lseek(job->errors->fd, 0, SEEK_SET) < 0) {
         archive_problem(job,
-                        "Cannot prepare diagnostics: " +
-                            std::error_code{errno, std::generic_category()}.message(),
+                        i18n::trf("Cannot prepare diagnostics: {}",
+                                  std::error_code{errno, std::generic_category()}.message()),
                         "Close unused applications and try again.");
         return;
     }
@@ -735,11 +752,12 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
                 publish(job->backend.single_file ? job->staging / "payload" : job->contents,
                         job->destination, job->name, publish_error);
             if (publish_error) {
-                archive_problem(job,
-                                "Extraction finished, but publishing the result failed: " +
-                                    publish_error.message(),
-                                "The extracted data is retained. Check destination permissions and "
-                                "move it from the output folder below.");
+                archive_problem(
+                    job,
+                    i18n::trf("Extraction finished, but publishing the result failed: {}",
+                              publish_error.message()),
+                    "The extracted data is retained. Check destination permissions and "
+                    "move it from the output folder below.");
                 return;
             }
             // Only known temporary entries, never recursively remove archive-controlled paths.
@@ -753,9 +771,9 @@ void ActionHandoff::extract_step(std::shared_ptr<Extraction> job, bool second_pa
         },
         job->output->fd, job->errors->fd, job->password ? job->password->fd : -1, job->input->fd);
     if (error) {
-        archive_problem(job,
-                        "Cannot start " + job->backend.program.string() + ": " + error.message(),
-                        archive_install_hint({job->source, job->mime}));
+        archive_problem(
+            job, i18n::trf("Cannot start {}: {}", job->backend.program.string(), error.message()),
+            archive_install_hint({job->source, job->mime}));
     }
 }
 

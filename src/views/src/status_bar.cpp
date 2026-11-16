@@ -47,7 +47,8 @@ std::string status_of(const Folder& folder) {
     if (model.loading()) {
         return i18n::trf("{} items, loading…", count);
     }
-    std::string status = count == 1 ? std::string{i18n::tr("1 item")} : i18n::trf("{} items", count);
+    std::string status =
+        count == 1 ? std::string{i18n::tr("1 item")} : i18n::trf("{} items", count);
     if (const std::size_t hidden = folder.hidden_count(); hidden > 0) {
         status += i18n::trf(", {} hidden", hidden);
     }
@@ -177,7 +178,7 @@ void StatusBar::draw(ui::Renderer& renderer, const ui::Rect& bounds, const theme
                    cancel_button_.y + ((kButtonHeight - kIconSize) / 2.0F), kIconSize,
                    cancel_hovered_ ? palette.error : palette.on_surface_variant);
         text_right = cancel_button_.x - kPadding;
-        const std::string stop_key = keys_for(Command::stop_transfer);
+        const std::string stop_key = i18n::keys(keys_for(Command::stop_transfer));
         if (!stop_key.empty()) {
             const auto& key_line = renderer.fonts().layout(stop_key, text_size_, renderer.scale());
             const float key_width = key_line.width / renderer.scale();

@@ -1,11 +1,12 @@
 #include "rummage/views/confirm_dialog.hpp"
-#include "rummage/core/i18n.hpp"
 
 #include <algorithm>
 #include <format>
 #include <string_view>
 #include <utility>
 #include <xkbcommon/xkbcommon-keysyms.h>
+
+#include "rummage/core/i18n.hpp"
 
 namespace rummage::views {
 namespace {
@@ -45,9 +46,10 @@ void ConfirmDialog::open(std::string title, std::string detail, std::string acti
 void ConfirmDialog::open_password(std::string name, bool retry,
                                   std::function<void(std::optional<std::string>)> answer) {
     open(
-        "Password for “" + name + "”",
-        retry ? "Password rejected or archive damaged. Try again." : "Enter the archive password.",
-        "Extract",
+        i18n::trf("Password for “{}”", name),
+        std::string{i18n::tr(retry ? "Password rejected or archive damaged. Try again."
+                                   : "Enter the archive password.")},
+        std::string{i18n::tr("Extract")},
         [this, answer = std::move(answer)](bool confirmed) {
             std::optional<std::string> password;
             if (confirmed)

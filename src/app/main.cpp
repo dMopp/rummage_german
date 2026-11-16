@@ -31,6 +31,7 @@
 #include "rummage/core/file.hpp"
 #include "rummage/core/file_picker.hpp"
 #include "rummage/core/file_watcher.hpp"
+#include "rummage/core/i18n.hpp"
 #include "rummage/core/log.hpp"
 #include "rummage/core/memory.hpp"
 #include "rummage/core/worker_pool.hpp"
@@ -67,7 +68,6 @@
 #include "rummage/views/file_picker.hpp"
 #include "rummage/views/state.hpp"
 #include "rummage/views/title_bar.hpp"
-#include "rummage/core/i18n.hpp"
 #include "test_scene.hpp"
 
 namespace {
@@ -682,8 +682,9 @@ int main(int argc, char** argv) {
             display,
             egl,
             fonts,
-            {.title = picker_request ? (picker_request->title.empty() ? std::string{i18n::tr("Select a file — rummage")}
-                                                                      : picker_request->title)
+            {.title = picker_request ? (picker_request->title.empty()
+                                            ? std::string{i18n::tr("Select a file — rummage")}
+                                            : picker_request->title)
                                      : "rummage",
              .app_id = "rummage",
              .width = remembered.state.window_width,
@@ -916,10 +917,13 @@ int main(int argc, char** argv) {
                             if (path.is_absolute())
                                 chosen(path);
                         });
-                    if (error || !folder_chooser->start(self, {"--pick-directory", "--title",
-                                                               "Choose Folder", start.string()})) {
+                    if (error ||
+                        !folder_chooser->start(
+                            self, {"--pick-directory", "--title",
+                                   std::string{i18n::tr("Choose Folder")}, start.string()})) {
                         folder_chooser.reset();
-                        columns->show_message("The folder chooser could not start", true);
+                        columns->show_message(
+                            std::string{i18n::tr("The folder chooser could not start")}, true);
                     }
                 });
             }

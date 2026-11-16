@@ -439,9 +439,8 @@ void Browser::copy_text(std::string text, std::string message) {
     cut_marks_ = {};
     if (message.empty()) {
         const auto lines = static_cast<std::size_t>(std::ranges::count(text, '\n')) + 1;
-        message = lines == 1
-                      ? i18n::trf("Copied {} characters", column_at_byte(text, text.size()))
-                      : i18n::trf("Copied {} lines", lines);
+        message = lines == 1 ? i18n::trf("Copied {} characters", column_at_byte(text, text.size()))
+                             : i18n::trf("Copied {} lines", lines);
     }
     if (system_.offer) {
         system_.offer({{std::string{kText}, text}, {"UTF8_STRING", text}, {"text/plain", text}});
@@ -1517,14 +1516,15 @@ void Browser::ask_to_run(const std::filesystem::path& program,
                          std::function<void()> allow_and_run) {
     const std::string name = program.filename().string();
     confirm_.open(
-        std::format("Allow \u201c{}\u201d to run?", name),
-        "It is a program, and it is not allowed to run yet.", "Allow and Run",
+        i18n::trf("Allow \u201c{}\u201d to run?", name),
+        std::string{i18n::tr("It is a program, and it is not allowed to run yet.")},
+        std::string{i18n::tr("Allow and Run")},
         [allow_and_run = std::move(allow_and_run)](bool confirmed) {
             if (confirmed) {
                 allow_and_run();
             }
         },
-        "Run only programs you trust: they run with your permissions.");
+        std::string{i18n::tr("Run only programs you trust: they run with your permissions.")});
     redraw_();
 }
 
@@ -2761,7 +2761,10 @@ void Browser::draw_toolbar(ui::Renderer& renderer, const ui::Rect& bounds,
     float field_right = bounds.right() - 10;
     if (panes_enabled_) {
         area().settings_bounds = {field_right - 34, bounds.y + 6, 34, 32};
-        area().view_menu_bounds = {area().settings_bounds.x - 66, bounds.y + 6, 60, 32};
+        // As wide as its label in the interface's language ("View", "Ansicht").
+        const float view_width = std::max(60.0F, width_of(i18n::tr("View")) + 20.0F);
+        area().view_menu_bounds = {area().settings_bounds.x - view_width - 6, bounds.y + 6,
+                                   view_width, 32};
         field_right = area().view_menu_bounds.x - 8;
     }
     // Keep the filter usable in a narrow pane; Ctrl+Shift+N still creates a folder.
@@ -2982,9 +2985,10 @@ void Browser::draw_area(ui::Renderer& renderer, const ui::Rect& bounds,
             renderer.fill_background({view.x, view.y, 3, height}, palette.primary);
         const char* position = stacked_ ? (context_area_ == 0 ? "Top" : "Bottom")
                                         : (context_area_ == 0 ? "Left" : "Right");
-        renderer.draw_text(std::format("{}{}", position, active ? " · Active" : ""), view.x + 8,
-                           view.y + 6, 12, active ? palette.primary : palette.on_surface_variant,
-                           view.width - 16);
+        renderer.draw_text(std::format("{}{}", i18n::tr(position),
+                                       active ? i18n::tr(" · Active") : std::string_view{}),
+                           view.x + 8, view.y + 6, 12,
+                           active ? palette.primary : palette.on_surface_variant, view.width - 16);
         view.y += height;
         view.height -= height;
     }
@@ -4143,7 +4147,7 @@ void Browser::next_bookmark_change() {
                     text = std::move(*renamed);
                     changed = true;
                     const std::string shown = label.empty() ? folder.filename().string() : label;
-                    outcome.edited = std::format("Renamed “{}” in the sidebar", shown);
+                    outcome.edited = i18n::trf("Renamed “{}” in the sidebar", shown);
                 }
             }
             if (change.repoint) {
@@ -4161,8 +4165,8 @@ void Browser::next_bookmark_change() {
                                fs::repoint_bookmark(text, from, to)) {
                     text = std::move(*moved);
                     changed = true;
-                    outcome.edited = std::format("The bookmark now opens “{}”",
-                                                 to.lexically_normal().filename().string());
+                    outcome.edited = i18n::trf("The bookmark now opens “{}”",
+                                               to.lexically_normal().filename().string());
                     outcome.follow = to.lexically_normal();
                 }
             }
@@ -4664,7 +4668,7 @@ bool Browser::take_key(const ui::KeyEvent& event, Clock::time_point now) {
     if (const auto folder = folder_for(event); !folder.empty()) {
         std::error_code error;
         if (!std::filesystem::is_directory(folder, error)) {
-            show_message(std::format("Folder unavailable: {}", folder), true);
+            show_message(i18n::trf("Folder unavailable: {}", folder), true);
         } else {
             quick_look_.close();
             sidebar_.set_focused(false);

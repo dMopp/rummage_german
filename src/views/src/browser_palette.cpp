@@ -13,12 +13,12 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "rummage/core/i18n.hpp"
 #include "rummage/ui/seat.hpp"
 #include "rummage/views/browser.hpp"
 #include "rummage/views/command_palette.hpp"
 #include "rummage/views/file_clipboard.hpp"
 #include "rummage/views/shortcuts.hpp"
-#include "rummage/core/i18n.hpp"
 
 namespace rummage::views {
 namespace {
@@ -123,7 +123,8 @@ std::vector<PaletteItem> Browser::palette_items() {
     // Files.
     if (editable) {
         command(Command::new_folder, "new_folder", "New Folder");
-        add("command:new_file", "New Empty File", "", [this] { new_file(std::string{i18n::tr("New File")}, {}); });
+        add("command:new_file", "New Empty File", "",
+            [this] { new_file(std::string{i18n::tr("New File")}, {}); });
     }
     if (!names.empty() && !in_trash) {
         command(Command::copy, "copy", "Copy");
@@ -223,13 +224,14 @@ std::vector<PaletteItem> Browser::palette_items() {
 
     for (const auto& column : kDetailsColumns) {
         if (order.key != column.field) {
-            add("sort:" + std::string{column.id}, "Sort by " + std::string{column.title}, "",
-                [this, key = column.field] { set_sort(key, sort_order().descending); });
+            add("sort:" + std::string{column.id}, i18n::trf("Sort by {}", i18n::tr(column.title)),
+                "", [this, key = column.field] { set_sort(key, sort_order().descending); });
         }
         if (pane().mode == Mode::details && column.field != DetailsView::Field::name) {
             add("column:" + std::string{column.id},
-                std::string{pane().details.column_visible(column.field) ? "Hide " : "Show "} +
-                    std::string{column.title} + " column",
+                pane().details.column_visible(column.field)
+                    ? i18n::trf("Hide {} column", i18n::tr(column.title))
+                    : i18n::trf("Show {} column", i18n::tr(column.title)),
                 "", [this, field = column.field] {
                     pane().details.set_column_visible(field, !pane().details.column_visible(field));
                 });
@@ -267,7 +269,8 @@ std::vector<PaletteItem> Browser::palette_items() {
     // Places, as the sidebar lists them.
     for (const fs::Place& place : places_) {
         const std::string where = place.path.empty() ? place.disk.volume : place.path.string();
-        add("go:" + where, i18n::trf("Go to {}", place.label), "", [this, place] { open_place(place); });
+        add("go:" + where, i18n::trf("Go to {}", place.label), "",
+            [this, place] { open_place(place); });
         if (place.section == fs::Place::Section::devices && place.disk.mounted &&
             !place.disk.volume.empty()) {
             add("eject:" + place.disk.volume,
@@ -330,7 +333,9 @@ void Browser::open_with_palette() {
                  items.reserve(apps.size());
                  for (const AppChoice& app : apps) {
                      items.push_back({.id = "open_with:" + app.id,
-                                      .label = app.is_default ? app.name + std::string{i18n::tr(" (default)")} : app.name,
+                                      .label = app.is_default
+                                                   ? app.name + std::string{i18n::tr(" (default)")}
+                                                   : app.name,
                                       .keys = {},
                                       .remember = false,
                                       .action = [this, directory, files,

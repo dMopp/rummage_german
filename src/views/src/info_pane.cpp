@@ -539,7 +539,7 @@ std::string InfoPane::size_text() const {
                                  : i18n::trf("Counting… {}", format_size(size_->bytes));
     }
     return size_->complete() ? format_size(size_->bytes)
-                             : std::format("at least {}", format_size(size_->bytes));
+                             : i18n::trf("at least {}", format_size(size_->bytes));
 }
 
 void InfoPane::draw(ui::Renderer& renderer, const ui::Rect& bounds, const theme::Palette& palette,
@@ -835,7 +835,8 @@ void InfoPane::draw(ui::Renderer& renderer, const ui::Rect& bounds, const theme:
         out.row("Size", format_size(single->size));
         // The dot on the icon, in words (issue #17): for a file of a type that runs.
         if (!folder.is_trash() && folder.type_runs(*single)) {
-            out.row("Runs as program", folder.runs_as_program(*single) ? "Yes" : "No");
+            out.row("Runs as program",
+                    std::string{i18n::tr(folder.runs_as_program(*single) ? "Yes" : "No")});
         }
     }
     if (photo != nullptr && photo->width > 0) {

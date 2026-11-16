@@ -1,8 +1,9 @@
 #include "rummage/views/undo.hpp"
-#include "rummage/core/i18n.hpp"
 
 #include <format>
 #include <sys/stat.h>
+
+#include "rummage/core/i18n.hpp"
 
 namespace rummage::views {
 
@@ -15,14 +16,14 @@ std::string describe(const FileOperation& operation) {
         case FileOperation::Kind::rename:
             if (count == 1) {
                 return i18n::trf("“{}” is “{}” again",
-                                   operation.items.front().from.filename().string(),
-                                   operation.items.front().to.filename().string());
+                                 operation.items.front().from.filename().string(),
+                                 operation.items.front().to.filename().string());
             }
             break;
         case FileOperation::Kind::trash:
             if (count == 1) {
                 return i18n::trf("“{}” moved to the trash",
-                                   operation.items.front().from.filename().string());
+                                 operation.items.front().from.filename().string());
             }
             return i18n::trf("{} moved to the trash", what);
         case FileOperation::Kind::restore:
@@ -31,7 +32,7 @@ std::string describe(const FileOperation& operation) {
         case FileOperation::Kind::move:
             if (count > 0) {
                 return i18n::trf("{} back in {}", what,
-                                   operation.items.front().to.parent_path().filename().string());
+                                 operation.items.front().to.parent_path().filename().string());
             }
             break;
         case FileOperation::Kind::create:
@@ -42,9 +43,11 @@ std::string describe(const FileOperation& operation) {
             const bool runs =
                 !operation.modes.empty() && (operation.modes.front().after & S_IXUSR) != 0;
             if (count == 1) {
-                return std::format("{} {} run as a program", what, runs ? "can" : "can no longer");
+                return runs ? i18n::trf("{} can run as a program", what)
+                            : i18n::trf("{} can no longer run as a program", what);
             }
-            return std::format("{} {} run as programs", what, runs ? "can" : "can no longer");
+            return runs ? i18n::trf("{} can run as programs", what)
+                        : i18n::trf("{} can no longer run as programs", what);
         }
     }
     return what;
